@@ -10,7 +10,8 @@ namespace MapAssist.Types
 {
     public class Room : IUpdatable<Room>
     {
-        IntPtr _pRoom = IntPtr.Zero;
+        //needs to be public so it can be accessed from GameMemory for performance reasons
+        public IntPtr _pRoom = IntPtr.Zero;
         private Structs.Room _room;
 
         public Room(IntPtr pRoom)
