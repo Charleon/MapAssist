@@ -21,6 +21,7 @@ namespace MapAssist.Types
 {
     public enum Difficulty : ushort
     {
+        None = 99,
         Normal = 0,
         Nightmare = 1,
         Hell = 2

@@ -23,5 +23,6 @@ namespace MapAssist.Types
     {
         public static int UnitHashTable = 0x20546E0;
         public static int UiSettings = 0x20643A2;
+        public static int ExpansionCharacter = 0x20643B5;
     }
 }

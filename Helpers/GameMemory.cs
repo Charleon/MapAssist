@@ -34,6 +34,9 @@ namespace MapAssist.Helpers
         private static readonly string ProcessName = Encoding.UTF8.GetString(new byte[] { 68, 50, 82 });
         private static UnitAny PlayerUnit = default;
         private static int _lastProcessId = 0;
+        private static IntPtr PlayerUnitPtr;
+        private static Difficulty currentDifficulty = Difficulty.None;
+        private static uint currentMapSeed = 0;
 
         unsafe public static GameData GetGameData()
         {
@@ -72,10 +75,17 @@ namespace MapAssist.Helpers
                     WindowsExternal.OpenProcess((uint)WindowsExternal.ProcessAccessFlags.VirtualMemoryRead, false, gameProcess.Id);
                 IntPtr processAddress = gameProcess.MainModule.BaseAddress;
 
-                if (Equals(PlayerUnit, default(UnitAny)))
+                if (PlayerUnitPtr == IntPtr.Zero)
                 {
-                    var unitHashTable =
-                        Read<UnitHashTable>(processHandle, IntPtr.Add(processAddress, Offsets.UnitHashTable));
+                    var expansionCharacter = Read<byte>(processHandle, IntPtr.Add(processAddress, Offsets.ExpansionCharacter)) == 1;
+                    var userBaseOffset = 0x30;
+                    var checkUser1 = 1;
+                    if (expansionCharacter)
+                    {
+                        userBaseOffset = 0x70;
+                        checkUser1 = 0;
+                    }
+                    var unitHashTable = Read<UnitHashTable>(processHandle, IntPtr.Add(processAddress, Offsets.UnitHashTable));
                     foreach (var pUnitAny in unitHashTable.UnitTable)
                     {
                         var pListNext = pUnitAny;
@@ -85,32 +95,38 @@ namespace MapAssist.Helpers
                             var unitAny = Read<UnitAny>(processHandle, pListNext);
                             if (unitAny.Inventory != IntPtr.Zero)
                             {
-                                var inventory = Read<Inventory>(processHandle, (IntPtr)unitAny.Inventory);
-                                if (inventory.pUnk1 != IntPtr.Zero)
+                                var UserBaseCheck = Read<int>(processHandle, IntPtr.Add(unitAny.Inventory, userBaseOffset));
+                                if (UserBaseCheck != checkUser1)
                                 {
+                                    PlayerUnitPtr = pUnitAny;
                                     PlayerUnit = unitAny;
                                     break;
                                 }
                             }
-
                             pListNext = (IntPtr)unitAny.pListNext;
                         }
 
-                        if (!Equals(PlayerUnit, default(UnitAny)))
+                        if (PlayerUnitPtr != IntPtr.Zero)
                         {
                             break;
                         }
                     }
+                }
 
-                    if (Equals(PlayerUnit, default(UnitAny)))
-                    {
-                        throw new Exception("Unable to find player unit");
-                    }
+                if (PlayerUnitPtr == IntPtr.Zero)
+                {
+                    currentDifficulty = Difficulty.None;
+                    currentMapSeed = 0;
+                    throw new Exception("Player pointer is zero.");
                 }
 
                 var playerName = Encoding.ASCII.GetString(Read<byte>(processHandle, PlayerUnit.UnitData, 16)).TrimEnd((char)0);
                 var act = Read<Act>(processHandle, (IntPtr)PlayerUnit.pAct);
-                var mapSeed = act.MapSeed;
+                if (currentMapSeed == 0)
+                {
+                    currentMapSeed = act.MapSeed;
+                }
+                var mapSeed = currentMapSeed;
 
                 if (mapSeed <= 0 || mapSeed > 0xFFFFFFFF)
                 {
@@ -119,7 +135,11 @@ namespace MapAssist.Helpers
 
                 var actId = act.ActId;
                 var actMisc = Read<ActMisc>(processHandle, (IntPtr)act.ActMisc);
-                var gameDifficulty = actMisc.GameDifficulty;
+                if (currentDifficulty == Difficulty.None)
+                {
+                    currentDifficulty = actMisc.GameDifficulty;
+                }
+                var gameDifficulty = currentDifficulty;
 
                 if (!gameDifficulty.IsValid())
                 {
@@ -139,7 +159,7 @@ namespace MapAssist.Helpers
                     throw new Exception("Level id out of bounds.");
                 }
 
-                var mapShown = Read<UiSettings>(processHandle, IntPtr.Add(processAddress, Offsets.UiSettings)).MapShown;
+                var mapShown = Read<UiSettings>(processHandle, IntPtr.Add(processAddress, Offsets.UiSettings)).MapShown == 1;
 
                 return new GameData
                 {
@@ -170,6 +190,7 @@ namespace MapAssist.Helpers
         private static void ResetPlayerUnit()
         {
             PlayerUnit = default;
+            PlayerUnitPtr = IntPtr.Zero;
         }
 
         public static T[] Read<T>(IntPtr processHandle, IntPtr address, int count) where T : struct
