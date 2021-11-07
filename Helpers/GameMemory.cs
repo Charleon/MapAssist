@@ -34,7 +34,6 @@ namespace MapAssist.Helpers
         private static readonly string ProcessName = Encoding.UTF8.GetString(new byte[] { 68, 50, 82 });
         private static UnitAny PlayerUnit = default;
         private static int _lastProcessId = 0;
-        private static IntPtr PlayerUnitPtr;
         private static Difficulty currentDifficulty = Difficulty.None;
         private static uint currentMapSeed = 0;
 
@@ -75,17 +74,10 @@ namespace MapAssist.Helpers
                     WindowsExternal.OpenProcess((uint)WindowsExternal.ProcessAccessFlags.VirtualMemoryRead, false, gameProcess.Id);
                 IntPtr processAddress = gameProcess.MainModule.BaseAddress;
 
-                if (PlayerUnitPtr == IntPtr.Zero)
+                if (Equals(PlayerUnit, default(UnitAny)))
                 {
-                    var expansionCharacter = Read<byte>(processHandle, IntPtr.Add(processAddress, Offsets.ExpansionCharacter)) == 1;
-                    var userBaseOffset = 0x30;
-                    var checkUser1 = 1;
-                    if (expansionCharacter)
-                    {
-                        userBaseOffset = 0x70;
-                        checkUser1 = 0;
-                    }
                     var unitHashTable = Read<UnitHashTable>(processHandle, IntPtr.Add(processAddress, Offsets.UnitHashTable));
+                    var expansionCharacter = Read<byte>(processHandle, IntPtr.Add(processAddress, Offsets.ExpansionCharacter)) == 1;
                     foreach (var pUnitAny in unitHashTable.UnitTable)
                     {
                         var pListNext = pUnitAny;
@@ -95,10 +87,11 @@ namespace MapAssist.Helpers
                             var unitAny = Read<UnitAny>(processHandle, pListNext);
                             if (unitAny.Inventory != IntPtr.Zero)
                             {
-                                var UserBaseCheck = Read<int>(processHandle, IntPtr.Add(unitAny.Inventory, userBaseOffset));
-                                if (UserBaseCheck != checkUser1)
+                                var inventory = Read<Inventory>(processHandle, (IntPtr)unitAny.Inventory);
+                                var inventoryOffset = expansionCharacter ? inventory.pUnk1Exp : inventory.pUnk1NonExp;
+                                var inventoryIntCheck = expansionCharacter ? 0 : 1;
+                                if (inventoryOffset != inventoryIntCheck)
                                 {
-                                    PlayerUnitPtr = pUnitAny;
                                     PlayerUnit = unitAny;
                                     break;
                                 }
@@ -106,18 +99,18 @@ namespace MapAssist.Helpers
                             pListNext = (IntPtr)unitAny.pListNext;
                         }
 
-                        if (PlayerUnitPtr != IntPtr.Zero)
+                        if (!Equals(PlayerUnit, default(UnitAny)))
                         {
                             break;
                         }
                     }
-                }
 
-                if (PlayerUnitPtr == IntPtr.Zero)
-                {
-                    currentDifficulty = Difficulty.None;
-                    currentMapSeed = 0;
-                    throw new Exception("Player pointer is zero.");
+                    if (Equals(PlayerUnit, default(UnitAny)))
+                    {
+                        currentDifficulty = Difficulty.None;
+                        currentMapSeed = 0;
+                        throw new Exception("Unable to find player unit");
+                    }
                 }
 
                 var playerName = Encoding.ASCII.GetString(Read<byte>(processHandle, PlayerUnit.UnitData, 16)).TrimEnd((char)0);
@@ -190,7 +183,6 @@ namespace MapAssist.Helpers
         private static void ResetPlayerUnit()
         {
             PlayerUnit = default;
-            PlayerUnitPtr = IntPtr.Zero;
         }
 
         public static T[] Read<T>(IntPtr processHandle, IntPtr address, int count) where T : struct
