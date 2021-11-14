@@ -107,6 +107,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cache\FontCache.cs" />
+    <Compile Include="Cache\IconCache.cs" />
+    <Compile Include="Drawing\IconDrawer.cs" />
+    <Compile Include="Drawing\MiniMapDrawer.cs" />
+    <Compile Include="Drawing\DrawingBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Overlay.cs">
       <SubType>Form</SubType>
     </Compile>
