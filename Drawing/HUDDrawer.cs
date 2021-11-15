@@ -73,7 +73,8 @@ namespace MapAssist.Drawing
                 scaledResult = ImageUtils.ResizeImage(rotatedResult, _configuration.Rendering.Size, _configuration.Rendering.Size);
             }
 
-            screenGraphics.DrawImage(scaledResult, new Point(400, 200));
+            var renderingPosition = GetConfiguredLocation(scaledResult.Size);
+            screenGraphics.DrawImage(scaledResult, renderingPosition);
 
             DrawWarningTexts(screenGraphics);
             
@@ -108,6 +109,33 @@ namespace MapAssist.Drawing
             {
                 image = ImageUtils.RotateImage(image, 53, true, false, Color.Transparent);
             }*/
+        }
+
+        public Point GetConfiguredLocation(Size mapSize)
+        {
+            int xOffset = (int)(Screen.PrimaryScreen.WorkingArea.Width * 0.05);
+            int yOffset = (int)(Screen.PrimaryScreen.WorkingArea.Height * 0.1);
+            switch (_configuration.Rendering.Position)
+            {
+                case MapPosition.TopLeft:
+                    return new Point(
+                        Screen.PrimaryScreen.WorkingArea.X + xOffset,
+                        Screen.PrimaryScreen.WorkingArea.Y + yOffset
+                        );
+                case MapPosition.TopRight:
+                    return new Point(
+                        Screen.PrimaryScreen.WorkingArea.Width - xOffset - mapSize.Width,
+                        Screen.PrimaryScreen.WorkingArea.Y + yOffset
+                        );
+                case MapPosition.Center:
+                    return new Point(
+                        Screen.PrimaryScreen.WorkingArea.Width / 2 - mapSize.Width / 2,
+                        Screen.PrimaryScreen.WorkingArea.Height / 2 - mapSize.Height / 2
+                        );
+                default:
+                    return new Point(0, 0);
+
+            }
         }
 
         private Point GetObjectPositionInWorld(Point objectPosition)
