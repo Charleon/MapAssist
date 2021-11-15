@@ -39,6 +39,7 @@ namespace MapAssist.Settings
         }
         public int Size { get; set; }
         public bool Rotate { get; set; }
+        public float ZoomLevel { get; set; }
         public MapPosition Position { get; set; }
         public PointOfInterestRendering NextArea { get; set; }
         public PointOfInterestRendering PreviousArea { get; set; }
@@ -58,6 +59,7 @@ namespace MapAssist.Settings
             Size = ConfigurationReader.ReadInt16("Size");
             Position = ConfigurationReader.ParseEnum<MapPosition>("MapPosition");
             Rotate = ConfigurationReader.ReadBoolean("Rotate");
+            ZoomLevel = ConfigurationReader.ReadSingle("ZoomLevelDefault");
         }
     }
 
@@ -77,7 +79,6 @@ namespace MapAssist.Settings
         public char ToggleKey { get; set; }
         public char ZoomInKey { get; set; }
         public char ZoomOutKey { get; set; }
-        public float ZoomLevel { get; set; }
         public Area[] PrefetchAreas { get; set; }
         public  Area[] HiddenAreas { get; set; } 
         public string[] WarnImmuneNPC { get; set; }
@@ -94,7 +95,6 @@ namespace MapAssist.Settings
             ToggleKey = ConfigurationReader.ReadChar("ToggleKey");
             ZoomInKey = ConfigurationReader.ReadChar("ZoomInKey");
             ZoomOutKey = ConfigurationReader.ReadChar("ZoomOutKey");
-            ZoomLevel = ConfigurationReader.ReadSingle("ZoomLevelDefault");
             Opacity = ConfigurationReader.ReadDouble("Opacity");
             OverlayMode = ConfigurationReader.ReadBoolean("OverlayMode");
             AlwaysOnTop = ConfigurationReader.ReadBoolean("AlwaysOnTop");
