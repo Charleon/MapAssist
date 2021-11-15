@@ -121,8 +121,8 @@ namespace MapAssist
 
             _currentGameData = gameData;
 
-            if(_mapApi != null && _areaData != null) 
-            { 
+            if (_mapApi != null && _areaData != null)
+            {
                 List<PointOfInterest> pointsOfInterest = PointOfInterestHandler.Get(_mapApi, _areaData, _configuration);
                 _overlayDrawer.UpdateGameAndAreaData(_currentGameData, _areaData, pointsOfInterest);
             }
@@ -143,7 +143,7 @@ namespace MapAssist
 
             _timer.Start();
         }
-        
+
         private void SetTopMost()
         {
             var initialStyle = (uint)WindowsExternal.GetWindowLongPtr(Handle, -20);
@@ -163,108 +163,15 @@ namespace MapAssist
 
         private bool InGame()
         {
-            return _currentGameData != null && 
+            return _currentGameData != null &&
                 _currentGameData.MainWindowHandle != IntPtr.Zero &&
                  WindowsExternal.GetForegroundWindow() == _currentGameData.MainWindowHandle;
         }
 
         private void MapOverlay_Paint(object sender, PaintEventArgs e)
         {
-
             UpdateLocation();
-
-            /*if (_configuration.Map.OverlayMode)
-            {
-                float w = 0;
-                float h = 0;
-                var scale = 0.0F;
-                var center = new Vector2();
-
-                if (ConfigurationManager.AppSettings["ZoomLevelDefault"] == null) { _configuration.Map.ZoomLevel = 1; }
-
-                switch (_configuration.Map.Position)
-                {
-                    case MapPosition.Center:
-                        w = _screen.WorkingArea.Width;
-                        h = _screen.WorkingArea.Height;
-                        scale = (1024.0F / h * w * 3f / 4f / 2.3F) * _configuration.Map.ZoomLevel;
-                        center = new Vector2(w / 2, h / 2 + 20);
-
-                        e.Graphics.SetClip(new RectangleF(0, 0, w, h));
-                        break;
-                    case MapPosition.TopLeft:
-                        w = 640;
-                        h = 360;
-                        scale = (1024.0F / h * w * 3f / 4f / 3.35F) * _configuration.Map.ZoomLevel;
-                        center = new Vector2(w / 2, (h / 2) + 48);
-
-                        e.Graphics.SetClip(new RectangleF(0, 50, w, h));
-                        break;
-                    case MapPosition.TopRight:
-                        w = 640;
-                        h = 360;
-                        scale = (1024.0F / h * w * 3f / 4f / 3.35F) * _configuration.Map.ZoomLevel;
-                        center = new Vector2(w / 2, (h / 2) + 40);
-
-                        e.Graphics.TranslateTransform(_screen.WorkingArea.Width - w, -8);
-                        e.Graphics.SetClip(new RectangleF(0, 50, w, h));
-                        break;
-                }
-
-                Point playerPosInArea = _currentGameData.PlayerPosition.OffsetFrom(_areaData.Origin).OffsetFrom(_compositor.CropOffset);
-
-                var playerPos = new Vector2(playerPosInArea.X, playerPosInArea.Y);
-                Vector2 Transform(Vector2 p) =>
-                    center +
-                    DeltaInWorldToMinimapDelta(
-                        p - playerPos,
-                        (float)Math.Sqrt(w * w + h * h),
-                        scale,
-                        0);
-
-                var p1 = Transform(new Vector2(0, 0));
-                var p2 = Transform(new Vector2(gameMap.Width, 0));
-                var p4 = Transform(new Vector2(0, gameMap.Height));
-
-                PointF[] destinationPoints = {
-                    new PointF(p1.X, p1.Y),
-                    new PointF(p2.X, p2.Y),
-                    new PointF(p4.X, p4.Y)
-                };
-
-                e.Graphics.DrawImage(gameMap, destinationPoints);
-            }
-            else
-            {
-                var anchor = new Point(0, 0);
-                switch (_configuration.Map.Position)
-                {
-                    case MapPosition.Center:
-                        anchor = new Point(_screen.WorkingArea.Width / 2, _screen.WorkingArea.Height / 2);
-                        break;
-                    case MapPosition.TopRight:
-                        anchor = new Point(_screen.WorkingArea.Width - gameMap.Width, 0);
-                        break;
-                    case MapPosition.TopLeft:
-                        anchor = new Point(0, 0);
-                        break;
-                }
-
-                e.Graphics.DrawImage(gameMap, anchor);
-            }*/
         }
-
-        /*
-        public Vector2 DeltaInWorldToMinimapDelta(Vector2 delta, double diag, float scale, float deltaZ = 0)
-        {
-            var CAMERA_ANGLE = -26F * 3.14159274F / 180;
-
-            var cos = (float)(diag * Math.Cos(CAMERA_ANGLE) / scale);
-            var sin = (float)(diag * Math.Sin(CAMERA_ANGLE) /
-                               scale);
-
-            return new Vector2((delta.X - delta.Y) * cos, deltaZ - (delta.X + delta.Y) * sin);
-        }*/
 
         /// <summary>
         /// Update the location and size of the form relative to the window location.
