@@ -65,7 +65,7 @@ namespace MapAssist.Drawing
                 DrawDestinationLines(mapBackgroundGraphics, pointsOfInterest);
             }
 
-            var rotatedResult = ImageUtils.RotateImage(mapBackground, 53, true, false, Color.Transparent);
+            var rotatedResult = _configuration.Rendering.Rotate ? ImageUtils.RotateImage(mapBackground, 53, true, false, Color.Transparent) : mapBackground;
             var scaledResult = rotatedResult; 
             
             if(scaledResult.Size.Width > _configuration.Rendering.Size) 
