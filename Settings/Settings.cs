@@ -38,6 +38,8 @@ namespace MapAssist.Settings
             ReadFromConfiguration();
         }
         public int Size { get; set; }
+
+        public MapPosition Position { get; set; }
         public PointOfInterestRendering NextArea { get; set; }
         public PointOfInterestRendering PreviousArea { get; set; }
         public PointOfInterestRendering Waypoint { get; set; } 
@@ -54,6 +56,7 @@ namespace MapAssist.Settings
             Player = Utils.GetRenderingSettingsForPrefix("Player");
             SuperChest = Utils.GetRenderingSettingsForPrefix("SuperChest");
             Size = ConfigurationReader.ReadInt16("Size");
+            Position = ConfigurationReader.ParseEnum<MapPosition>("MapPosition");
         }
     }
 
@@ -68,7 +71,7 @@ namespace MapAssist.Settings
         public bool OverlayMode { get; set; }
         public bool AlwaysOnTop { get; set; }
         public bool ToggleViaInGameMap { get; set; }
-        public MapPosition Position { get; set; }
+        
         public int UpdateTime { get; set; }
         public bool Rotate { get; set; }
         public char ToggleKey { get; set; }
@@ -97,7 +100,6 @@ namespace MapAssist.Settings
             OverlayMode = ConfigurationReader.ReadBoolean("OverlayMode");
             AlwaysOnTop = ConfigurationReader.ReadBoolean("AlwaysOnTop");
             ToggleViaInGameMap = ConfigurationReader.ReadBoolean("ToggleViaInGameMap");
-            Position = ConfigurationReader.ParseEnum<MapPosition>("MapPosition");
             PrefetchAreas = Utils.ParseCommaSeparatedAreasByName(ConfigurationReader.ReadString("PrefetchAreas"));
             HiddenAreas = Utils.ParseCommaSeparatedAreasByName(ConfigurationReader.ReadString("HiddenAreas"));
             WarnImmuneNPC = Utils.ParseCommaSeparatedNpcsByName(ConfigurationReader.ReadString("WarnNPCImmune"));
