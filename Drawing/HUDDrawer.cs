@@ -66,13 +66,11 @@ namespace MapAssist.Drawing
             }
 
             var rotatedResult = _configuration.Rendering.Rotate ? ImageUtils.RotateImage(mapBackground, 53, true, false, Color.Transparent) : mapBackground;
-            var scaledResult = rotatedResult; 
-            
-            if(scaledResult.Size.Width > _configuration.Rendering.Size) 
-            {
-                scaledResult = ImageUtils.ResizeImage(rotatedResult, _configuration.Rendering.Size, _configuration.Rendering.Size);
-            }
 
+            var scaledResult = ImageUtils.ResizeImage(rotatedResult, 
+                    (int)(_configuration.Rendering.Size * _configuration.Rendering.ZoomLevel),
+                    (int)(_configuration.Rendering.Size * _configuration.Rendering.ZoomLevel));
+            
             var renderingPosition = GetConfiguredLocation(scaledResult.Size);
             screenGraphics.DrawImage(scaledResult, renderingPosition);
 
