@@ -60,20 +60,15 @@ namespace MapAssist
                     }
                     if (args.KeyChar == _configuration.Map.ZoomInKey)
                     {
-                        if (_configuration.Map.ZoomLevel > 0.25f)
-                        {
-                            _configuration.Map.ZoomLevel -= 0.25f;
-                            _configuration.Rendering.Size = (int)(_configuration.Rendering.Size * 1.15f);
-                        }
+                        _configuration.Rendering.ZoomLevel += 0.25f;
                     }
                     if (args.KeyChar == _configuration.Map.ZoomOutKey)
                     {
-                        if (_configuration.Map.ZoomLevel < 4f)
-                        {
-                            _configuration.Map.ZoomLevel += 0.25f;
-                            _configuration.Rendering.Size = (int)(_configuration.Rendering.Size * .85f);
-                        }
+                        _configuration.Rendering.ZoomLevel -= 0.25f;
                     }
+
+                    _configuration.Rendering.ZoomLevel = Math.Min(4f, _configuration.Rendering.ZoomLevel);
+                    _configuration.Rendering.ZoomLevel = Math.Max(0.25f, _configuration.Rendering.ZoomLevel);
                 }
             };
         }
@@ -170,7 +165,7 @@ namespace MapAssist
         {
             return _currentGameData != null && 
                 _currentGameData.MainWindowHandle != IntPtr.Zero &&
-                WindowsExternal.GetForegroundWindow() == _currentGameData.MainWindowHandle;
+                 WindowsExternal.GetForegroundWindow() == _currentGameData.MainWindowHandle;
         }
 
         private void MapOverlay_Paint(object sender, PaintEventArgs e)
