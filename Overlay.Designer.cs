@@ -1,4 +1,5 @@
 ﻿
+using MapAssist.Drawing;
 using System;
 using System.ComponentModel;
 using System.Drawing;
@@ -34,20 +35,11 @@ namespace MapAssist
         /// </summary>
         private void InitializeComponent()
         {
+            _overlayDrawer = new Drawing.OverlayDrawer(_configuration);
+
             ComponentResourceManager resources = new ComponentResourceManager(typeof(Overlay));
-            mapOverlay = new PictureBox();
-            ((ISupportInitialize)(mapOverlay)).BeginInit();
+            
             this.SuspendLayout();
-            // 
-            // mapOverlay
-            // 
-            mapOverlay.BackColor = Color.Transparent;
-            mapOverlay.Location = new Point(12, 3);
-            mapOverlay.Name = "mapOverlay";
-            mapOverlay.Size = new Size(0, 0);
-            mapOverlay.TabIndex = 0;
-            mapOverlay.TabStop = false;
-            mapOverlay.Paint += new PaintEventHandler(MapOverlay_Paint);
 
             // 
             // frmOverlay
@@ -55,21 +47,26 @@ namespace MapAssist
             AutoScaleDimensions = new SizeF(6F, 13F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1767, 996);
-            Controls.Add(mapOverlay);
+  
+            Controls.Add(_overlayDrawer);
             FormBorderStyle = FormBorderStyle.None;
             Icon = (Icon)(resources.GetObject("$this.Icon"));
             Name = "Overlay";
             TransparencyKey = Color.Black;
             BackColor = Color.Black;
             WindowState = FormWindowState.Maximized;
+            Load += new EventHandler(_overlayDrawer.Load);
             Load += new EventHandler(Overlay_Load);
             FormClosing += new FormClosingEventHandler(Overlay_FormClosing);
-            ((ISupportInitialize)(mapOverlay)).EndInit();
+            FormClosing += new FormClosingEventHandler(_overlayDrawer.FormClosing);
+            //((ISupportInitialize)(mapOverlay)).EndInit();
+           
             ResumeLayout(false);
         }
 
         #endregion
 
-        private PictureBox mapOverlay;
+        //private PictureBox mapOverlay;
+        private Drawing.OverlayDrawer _overlayDrawer;
     }
 }

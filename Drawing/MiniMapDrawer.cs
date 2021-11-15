@@ -29,12 +29,12 @@ using MapAssist.Helpers;
 
 namespace MapAssist.Drawing
 {
-    public abstract class MiniMapDrawer
+    public static class MiniMapDrawer
     {
-        public static (Bitmap, Point) DrawMiniMapBackground(AreaData areaData,
-            int sizeMultiplier,
+        public static ((Bitmap, Point), int) DrawMiniMapBackground(AreaData areaData,
             MapColorConfiguration configuration,
-            IReadOnlyList<PointOfInterest> pointsOfInterest)
+            IReadOnlyList<PointOfInterest> pointsOfInterest,
+            int preferredRenderingWidth)
         {
             var background = new Bitmap(areaData.CollisionGrid[0].Length, areaData.CollisionGrid.Length,
                 PixelFormat.Format32bppArgb);
@@ -63,12 +63,21 @@ namespace MapAssist.Drawing
                         }
                     }
                 }
+                
+                int mapWidth = background.Size.Width;
+                int mapWidthDoubled = mapWidth * 2;
+                int decidedSizeMultiplier = 1;
+                
+                if(Math.Abs(mapWidthDoubled - preferredRenderingWidth) < Math.Abs(mapWidth - preferredRenderingWidth))
+                {
+                    decidedSizeMultiplier = 2;
+                }
 
                 var scaled = new Bitmap(background,
                     new Size(
                         new Point(
-                        sizeMultiplier * background.Size.Width,
-                        sizeMultiplier * background.Size.Height)
+                        decidedSizeMultiplier * background.Size.Width,
+                        decidedSizeMultiplier * background.Size.Height)
                         )
                     );
 
@@ -76,17 +85,17 @@ namespace MapAssist.Drawing
                 {
                     foreach (PointOfInterest poi in pointsOfInterest)
                     {
-                        Point offset = new Point(poi.Position.OffsetFrom(areaData.Origin).X * sizeMultiplier, poi.Position.OffsetFrom(areaData.Origin).Y * sizeMultiplier);
+                        Point offset = new Point(poi.Position.OffsetFrom(areaData.Origin).X * decidedSizeMultiplier, poi.Position.OffsetFrom(areaData.Origin).Y * decidedSizeMultiplier);
                         if (poi.RenderingSettings.CanDrawIcon())
                         {
-                            Bitmap icon = IconCache.GetIcon(poi.RenderingSettings, sizeMultiplier);
+                            Bitmap icon = IconCache.GetIcon(poi.RenderingSettings, decidedSizeMultiplier);
                             Point drawPosition = new Point(offset.X - icon.Size.Width / 2, offset.Y - icon.Size.Height / 2);
                             mapGraphics.DrawImage(icon, drawPosition);
                         }
 
                         if (!string.IsNullOrWhiteSpace(poi.Label) && poi.RenderingSettings.CanDrawLabel())
                         {
-                            Font font = FontCache.GetFont(poi.RenderingSettings, sizeMultiplier);
+                            Font font = FontCache.GetFont(poi.RenderingSettings, decidedSizeMultiplier);
                             mapGraphics.DrawString(poi.Label, font,
                                 new SolidBrush(poi.RenderingSettings.LabelColor),
                                 offset);
@@ -94,7 +103,7 @@ namespace MapAssist.Drawing
                     }
                 }
                 var cropped = ImageUtils.CropBitmap(scaled);
-                return cropped;
+                return (cropped, decidedSizeMultiplier);
             }
         }
     }

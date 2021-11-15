@@ -109,9 +109,12 @@
   <ItemGroup>
     <Compile Include="Cache\FontCache.cs" />
     <Compile Include="Cache\IconCache.cs" />
+    <Compile Include="Drawing\StringDrawer.cs" />
+    <Compile Include="Drawing\LineDrawer.cs" />
     <Compile Include="Drawing\IconDrawer.cs" />
+    <Compile Include="Drawing\HUDDrawer.cs" />
     <Compile Include="Drawing\MiniMapDrawer.cs" />
-    <Compile Include="Drawing\DrawingBox.cs">
+    <Compile Include="Drawing\OverlayDrawer.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Overlay.cs">
@@ -124,7 +127,6 @@
     <Compile Include="Helpers\ImageUtils.cs" />
     <Compile Include="Helpers\PointOfInterestHandler.cs" />
     <Compile Include="Helpers\MapApi.cs" />
-    <Compile Include="Helpers\Compositor.cs" />
     <Compile Include="Helpers\WindowsExternal.cs" />
     <Compile Include="Settings\ConfigurationUtility.cs" />
     <Compile Include="Structs\Act.cs" />

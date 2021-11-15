@@ -154,7 +154,7 @@ namespace MapAssist.Helpers
                 graphics.CompositingMode = CompositingMode.SourceCopy;
                 graphics.CompositingQuality = CompositingQuality.HighQuality;
                 graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.SmoothingMode = SmoothingMode.None;
                 graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
                 using (var wrapMode = new ImageAttributes())

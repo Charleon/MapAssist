@@ -40,7 +40,6 @@ namespace MapAssist
         private const uint TOPMOST_FLAGS = SWP_NOMOVE | SWP_NOSIZE;
         private readonly Timer _timer = new Timer();
         private GameData _currentGameData;
-        private Compositor _compositor;
         private AreaData _areaData;
         private MapApi _mapApi;
         private bool _show = true;
@@ -64,7 +63,7 @@ namespace MapAssist
                         if (_configuration.Map.ZoomLevel > 0.25f)
                         {
                             _configuration.Map.ZoomLevel -= 0.25f;
-                            _configuration.Map.Size = (int)(_configuration.Map.Size * 1.15f);
+                            _configuration.Rendering.Size = (int)(_configuration.Rendering.Size * 1.15f);
                         }
                     }
                     if (args.KeyChar == _configuration.Map.ZoomOutKey)
@@ -72,7 +71,7 @@ namespace MapAssist
                         if (_configuration.Map.ZoomLevel < 4f)
                         {
                             _configuration.Map.ZoomLevel += 0.25f;
-                            _configuration.Map.Size = (int)(_configuration.Map.Size * .85f);
+                            _configuration.Rendering.Size = (int)(_configuration.Rendering.Size * .85f);
                         }
                     }
                 }
@@ -93,11 +92,6 @@ namespace MapAssist
             _timer.Start();
 
             if (_configuration.Map.AlwaysOnTop) SetTopMost();
-
-            mapOverlay.Location = new Point(0, 0);
-            mapOverlay.Width = Width;
-            mapOverlay.Height = Height;
-            mapOverlay.BackColor = Color.Transparent;
         }
 
         private void Overlay_FormClosing(object sender, EventArgs e)
@@ -110,6 +104,7 @@ namespace MapAssist
             _timer.Stop();
 
             GameData gameData = GameMemory.GetGameData(_configuration);
+
             if (gameData != null)
             {
                 if (gameData.HasGameChanged(_currentGameData))
@@ -125,30 +120,30 @@ namespace MapAssist
                     if (gameData.Area != Area.None)
                     {
                         _areaData = _mapApi.GetMapData(gameData.Area);
-                        List<PointOfInterest> pointsOfInterest = PointOfInterestHandler.Get(_mapApi, _areaData, _configuration);
-                        _compositor = new Compositor(_areaData, pointsOfInterest, _configuration);
-                    }
-                    else
-                    {
-                        _compositor = null;
                     }
                 }
             }
 
             _currentGameData = gameData;
 
+            if(_mapApi != null && _areaData != null) 
+            { 
+                List<PointOfInterest> pointsOfInterest = PointOfInterestHandler.Get(_mapApi, _areaData, _configuration);
+                _overlayDrawer.UpdateGameAndAreaData(_currentGameData, _areaData, pointsOfInterest);
+            }
+
             if (ShouldHideMap())
             {
-                mapOverlay.Hide();
+                _overlayDrawer.Hide();
             }
             else
             {
-                if (!mapOverlay.Visible)
+                if (!_overlayDrawer.Visible)
                 {
-                    mapOverlay.Show();
+                    _overlayDrawer.Show();
                     if (_configuration.Map.AlwaysOnTop) SetTopMost();
                 }
-                mapOverlay.Refresh();
+                _overlayDrawer.Refresh();
             }
 
             _timer.Start();
@@ -173,35 +168,17 @@ namespace MapAssist
 
         private bool InGame()
         {
-            return _currentGameData != null && _currentGameData.MainWindowHandle != IntPtr.Zero &&
-                   WindowsExternal.GetForegroundWindow() == _currentGameData.MainWindowHandle;
+            return _currentGameData != null && 
+                _currentGameData.MainWindowHandle != IntPtr.Zero &&
+                WindowsExternal.GetForegroundWindow() == _currentGameData.MainWindowHandle;
         }
 
         private void MapOverlay_Paint(object sender, PaintEventArgs e)
         {
-            if (_compositor == null)
-            {
-                return;
-            }
 
             UpdateLocation();
 
-            Bitmap gameMap = _compositor.Compose(_currentGameData, !_configuration.Map.OverlayMode);
-
-            var msgCount = 0;
-            foreach (var warning in GameMemory.WarningMessages)
-            {
-                var fontSize = _configuration.Map.WarnImmuneNPCFontSize;
-                Font font = _compositor.GetFont(_configuration.Map.WarnImmuneNPCFont, fontSize);
-                var stringFormat = new StringFormat();
-                stringFormat.Alignment = _configuration.Map.WarnNPCHorizontalAlign;
-                stringFormat.LineAlignment = _configuration.Map.WarnNPCVerticalAlign;
-                e.Graphics.DrawString(warning, font,
-                new SolidBrush(_configuration.Map.WarnNPCFontColor),
-                new Point(Screen.PrimaryScreen.WorkingArea.Width / 2, 10 + (msgCount * (fontSize + fontSize / 2))), stringFormat);
-                msgCount++;
-            }
-            if (_configuration.Map.OverlayMode)
+            /*if (_configuration.Map.OverlayMode)
             {
                 float w = 0;
                 float h = 0;
@@ -279,9 +256,10 @@ namespace MapAssist
                 }
 
                 e.Graphics.DrawImage(gameMap, anchor);
-            }
+            }*/
         }
 
+        /*
         public Vector2 DeltaInWorldToMinimapDelta(Vector2 delta, double diag, float scale, float deltaZ = 0)
         {
             var CAMERA_ANGLE = -26F * 3.14159274F / 180;
@@ -291,7 +269,7 @@ namespace MapAssist
                                scale);
 
             return new Vector2((delta.X - delta.Y) * cos, deltaZ - (delta.X + delta.Y) * sin);
-        }
+        }*/
 
         /// <summary>
         /// Update the location and size of the form relative to the window location.
@@ -301,7 +279,7 @@ namespace MapAssist
             _screen = Screen.FromHandle(_currentGameData.MainWindowHandle);
             Location = new Point(_screen.WorkingArea.X, _screen.WorkingArea.Y);
             Size = new Size(_screen.WorkingArea.Width, _screen.WorkingArea.Height);
-            mapOverlay.Size = Size;
+            //mapOverlay.Size = Size;
         }
     }
 }
