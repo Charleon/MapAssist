@@ -38,7 +38,7 @@ namespace MapAssist.Settings
             ReadFromConfiguration();
         }
         public int Size { get; set; }
-
+        public bool Rotate { get; set; }
         public MapPosition Position { get; set; }
         public PointOfInterestRendering NextArea { get; set; }
         public PointOfInterestRendering PreviousArea { get; set; }
@@ -57,6 +57,7 @@ namespace MapAssist.Settings
             SuperChest = Utils.GetRenderingSettingsForPrefix("SuperChest");
             Size = ConfigurationReader.ReadInt16("Size");
             Position = ConfigurationReader.ParseEnum<MapPosition>("MapPosition");
+            Rotate = ConfigurationReader.ReadBoolean("Rotate");
         }
     }
 
@@ -73,7 +74,6 @@ namespace MapAssist.Settings
         public bool ToggleViaInGameMap { get; set; }
         
         public int UpdateTime { get; set; }
-        public bool Rotate { get; set; }
         public char ToggleKey { get; set; }
         public char ZoomInKey { get; set; }
         public char ZoomOutKey { get; set; }
@@ -91,7 +91,6 @@ namespace MapAssist.Settings
         protected override void ReadFromConfiguration()
         {
             UpdateTime = ConfigurationReader.ReadInt16("UpdateTime");
-            Rotate = ConfigurationReader.ReadBoolean("Rotate");
             ToggleKey = ConfigurationReader.ReadChar("ToggleKey");
             ZoomInKey = ConfigurationReader.ReadChar("ZoomInKey");
             ZoomOutKey = ConfigurationReader.ReadChar("ZoomOutKey");
