@@ -27,6 +27,7 @@ using MapAssist.Settings;
 using MapAssist.Cache;
 using MapAssist.Helpers;
 using System.Windows.Forms;
+using System.Numerics;
 
 namespace MapAssist.Drawing
 {
@@ -57,7 +58,7 @@ namespace MapAssist.Drawing
             _areaData = areaData;
             _cropOffset = cropOffset;
             _bitmapPlayerPosition = WorldCoordinatesToMapBitmapPixelCoordinates(GetObjectPositionInWorld(gameData.PlayerPosition));
-            
+
             using (Graphics mapBackgroundGraphics = Graphics.FromImage(mapBackground))
             {
                 DrawPlayer(mapBackgroundGraphics, _bitmapPlayerPosition);
@@ -65,48 +66,105 @@ namespace MapAssist.Drawing
                 DrawDestinationLines(mapBackgroundGraphics, pointsOfInterest);
             }
 
+            if (_configuration.Map.OverlayMode)
+            {
+                DrawMapToScreenOverlay(screenGraphics, mapBackground, gameData);
+                return;
+            }
+
             var rotatedResult = _configuration.Rendering.Rotate ? ImageUtils.RotateImage(mapBackground, 53, true, false, Color.Transparent) : mapBackground;
 
-            var scaledResult = ImageUtils.ResizeImage(rotatedResult, 
+            var scaledResult = ImageUtils.ResizeImage(rotatedResult,
                     (int)(_configuration.Rendering.Size * _configuration.Rendering.ZoomLevel),
                     (int)(_configuration.Rendering.Size * _configuration.Rendering.ZoomLevel));
-            
-            var renderingPosition = GetConfiguredLocation(scaledResult.Size);
-            screenGraphics.DrawImage(scaledResult, renderingPosition);
 
-            DrawWarningTexts(screenGraphics);
+            DrawMapToScreenFlat(screenGraphics, scaledResult);
             
+            DrawWarningTexts(screenGraphics);
+
             /*StringDrawer.DrawString(screenGraphics,
-                $"Rendersize: {_renderScale}",
+                $"Drawing position: {renderingPosition.X} {renderingPosition.Y}",
                 24,
                 new Point(Screen.PrimaryScreen.Bounds.Width / 2, Screen.PrimaryScreen.Bounds.Height / 2),
                 Color.Red);*/
+        }
 
+        void DrawMapToScreenFlat(Graphics screenGraphics, Bitmap mapScreen)
+        {
+            var renderingPosition = GetConfiguredLocation(mapScreen.Size);
+            screenGraphics.DrawImage(mapScreen, renderingPosition);
+        }
 
-            /*if (scale)
+        void DrawMapToScreenOverlay(Graphics screenGraphics, Bitmap mapScreen, GameData gameData)
+        {
+            float width = 0;
+            float height = 0;
+            var scale = 0.0F;
+            var center = new Vector2();
+
+            switch (_configuration.Rendering.Position)
             {
-                double biggestDimension = Math.Max(image.Width, image.Height);
+                case MapPosition.Center:
+                    width = Screen.PrimaryScreen.WorkingArea.Width;
+                    height = Screen.PrimaryScreen.WorkingArea.Height;
+                    scale = (1024.0F / height * width * 3f / 4f / 2.3F) * _configuration.Rendering.ZoomLevel;
+                    center = new Vector2(width / 2, height / 2 + 20);
 
-                multiplier = _configuration.Map.Size / biggestDimension;
+                    screenGraphics.SetClip(new RectangleF(0, 0, width, height));
+                    break;
+                case MapPosition.TopLeft:
+                    width = 640;
+                    height = 360;
+                    scale = (1024.0F / height * width * 3f / 4f / 3.35F) * _configuration.Rendering.ZoomLevel;
+                    center = new Vector2(width / 2, (height / 2) + 48);
 
-                if (multiplier == 0)
-                {
-                    multiplier = 1;
-                }
+                    screenGraphics.SetClip(new RectangleF(0, 50, width, height));
+                    break;
+                case MapPosition.TopRight:
+                    width = 640;
+                    height = 360;
+                    scale = (1024.0F / height * width * 3f / 4f / 3.35F) * _configuration.Rendering.ZoomLevel;
+                    center = new Vector2(width / 2, (height / 2) + 40);
+
+                    screenGraphics.TranslateTransform(Screen.PrimaryScreen.WorkingArea.Width - width, -8);
+                    screenGraphics.SetClip(new RectangleF(0, 50, width, height));
+                    break;
             }
 
-            // ReSharper disable once CompareOfFloatsByEqualityOperator
-            if (multiplier != 1)
-            {
-                image = ImageUtils.ResizeImage(image, (int)(image.Width * multiplier),
-                    (int)(image.Height * multiplier));
-            }
+            Point playerPosInArea = gameData.PlayerPosition.OffsetFrom(_areaData.Origin).OffsetFrom(_cropOffset).Multiply(_renderScale);
 
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (scale && _configuration.Map.Rotate)
-            {
-                image = ImageUtils.RotateImage(image, 53, true, false, Color.Transparent);
-            }*/
+            var playerPos = new Vector2(playerPosInArea.X, playerPosInArea.Y);
+
+            Vector2 Transform(Vector2 p) =>
+                center +
+                DeltaInWorldToMinimapDelta(
+                    p - playerPos,
+                    (float)Math.Sqrt(width * width + height * height),
+                    scale,
+                    0);
+
+            var p1 = Transform(new Vector2(0, 0));
+            var p2 = Transform(new Vector2(mapScreen.Width, 0));
+            var p4 = Transform(new Vector2(0, mapScreen.Height));
+
+            PointF[] destinationPoints = {
+                    new PointF(p1.X, p1.Y),
+                    new PointF(p2.X, p2.Y),
+                    new PointF(p4.X, p4.Y)
+                };
+
+            screenGraphics.DrawImage(mapScreen, destinationPoints);
+        }
+
+        public Vector2 DeltaInWorldToMinimapDelta(Vector2 delta, double diag, float scale, float deltaZ = 0)
+        {
+            var CAMERA_ANGLE = -26F * 3.14159274F / 180;
+
+            var cos = (float)(diag * Math.Cos(CAMERA_ANGLE) / scale);
+            var sin = (float)(diag * Math.Sin(CAMERA_ANGLE) /
+                               scale);
+
+            return new Vector2((delta.X - delta.Y) * cos, deltaZ - (delta.X + delta.Y) * sin);
         }
 
         public Point GetConfiguredLocation(Size mapSize)
@@ -158,7 +216,7 @@ namespace MapAssist.Drawing
                 var fontSize = _configuration.Map.WarnImmuneNPCFontSize;
                 Font font = FontCache.GetFont(_configuration.Map.WarnImmuneNPCFont, fontSize);
                 StringDrawer.DrawString(graphics,
-                    warning, 
+                    warning,
                     font,
                     fontSize,
                     _configuration.Map.WarnNPCHorizontalAlign,

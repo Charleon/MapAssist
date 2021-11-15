@@ -30,5 +30,10 @@ namespace MapAssist.Helpers
         {
             return new Point(point.X - offset.X, point.Y - offset.Y);
         }
+
+        public static Point Multiply(this Point point, int multiplier)
+        {
+            return new Point(point.X * multiplier, point.Y * multiplier);
+        }
     }
 }
