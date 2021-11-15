@@ -17,7 +17,6 @@
 *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 **/
 
-using MapAssist.Helpers;
 using MapAssist.Settings;
 using MapAssist.Types;
 using System;
@@ -27,18 +26,23 @@ using System.Drawing;
 using System.Windows.Forms;
 namespace MapAssist.Drawing
 {
-    public class DrawingBox : PictureBox
+    public class OverlayDrawer : PictureBox
     {
         private readonly Timer _timer;
         private readonly MapAssistConfiguration _configuration;
         GameData _gameData;
         AreaData _areaData;
         Bitmap _currentMap;
+        int _generatedMapScale;
+        Point _offsetAfterCrop;
+        Area _currentArea;
         IReadOnlyList<PointOfInterest> _pointsOfInterest;
-        public DrawingBox(MapAssistConfiguration configuration, GameData gameData, Compositor compositor) : base()
+        HUDDrawer _hudDrawer;
+        public OverlayDrawer(MapAssistConfiguration configuration) : base()
         {
             _configuration = configuration;
             _timer = new Timer();
+            _hudDrawer = new HUDDrawer(configuration);
             Initialize();
         }
 
@@ -47,8 +51,8 @@ namespace MapAssist.Drawing
             ((ISupportInitialize)(this)).BeginInit();
 
             BackColor = Color.Transparent;
-            Location = new Point(0,0);
-            Name = "simpleScreen";
+            Location = new Point(0, 0);
+            Name = "GameScreen";
             Size = new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
             TabIndex = 0;
             TabStop = false;
@@ -66,7 +70,7 @@ namespace MapAssist.Drawing
 
         public void FormClosing(object sender, EventArgs e)
         {
-
+            _timer.Stop();
         }
 
         /// <summary>
@@ -77,8 +81,6 @@ namespace MapAssist.Drawing
         private void UpdateDraw(object sender, EventArgs e)
         {
             _timer.Stop();
-            if (!Visible)
-                Visible = true;
 
             _timer.Start();
             Refresh();
@@ -91,13 +93,19 @@ namespace MapAssist.Drawing
         /// <param name="e"></param>
         public void Draw(object sender, PaintEventArgs e)
         {
-            if (_gameData != null && _areaData.Area == _gameData.Area) 
+            if (_gameData != null && _areaData.Area == _gameData.Area)
             {
                 var mapLayer = (Bitmap)_currentMap.Clone();
-                
-                e.Graphics.DrawImageUnscaled(mapLayer, Point.Empty);
+
+                _hudDrawer.DrawHUD(
+                    e.Graphics,
+                    mapLayer,
+                    _generatedMapScale,
+                    _areaData,
+                    _gameData,
+                    _offsetAfterCrop,
+                    _pointsOfInterest);
             }
-            
         }
 
         public void UpdateGameAndAreaData(GameData gameData, AreaData areaData, IReadOnlyList<PointOfInterest> pointsOfInterest)
@@ -106,9 +114,15 @@ namespace MapAssist.Drawing
             _areaData = areaData;
             _pointsOfInterest = pointsOfInterest;
 
-            if (_gameData != null && _areaData != null) 
-            { 
-                (_currentMap, _) = MiniMapDrawer.DrawMiniMapBackground(_areaData, 1, _configuration.MapColors, _pointsOfInterest);
+            if (_gameData != null && _areaData != null)
+            {
+                // Only Regenerate map if we have switched map.
+                if (_currentArea != areaData.Area)
+                {
+                    ((_currentMap, _offsetAfterCrop), _generatedMapScale) = MiniMapDrawer.DrawMiniMapBackground(_areaData,  _configuration.MapColors, _pointsOfInterest, _configuration.Rendering.Size);
+                    _offsetAfterCrop = new Point(_offsetAfterCrop.X / _generatedMapScale, _offsetAfterCrop.Y / _generatedMapScale);
+                    _currentArea = areaData.Area;
+                }
             }
         }
     }

@@ -45,5 +45,18 @@ namespace MapAssist.Cache
 
             return _fontCache[cacheKey];
         }
+
+        public static Font GetFont(string fontStr, int fontSize)
+        {
+            (string LabelFont, int LabelFontSize) cacheKey = (fontStr, fontSize);
+            if (!_fontCache.ContainsKey(cacheKey))
+            {
+                var font = new Font(fontStr,
+                    fontSize);
+                _fontCache[cacheKey] = font;
+            }
+
+            return _fontCache[cacheKey];
+        }
     }
 }
